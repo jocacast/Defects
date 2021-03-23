@@ -1,4 +1,4 @@
-package com.example.transportistas;
+package com.example.orderManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -86,7 +86,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
     public void startMainActivity(GoogleSignInAccount account) {
         String accountEmail = account.getEmail();
         Toast.makeText(getApplicationContext(),"User " + accountEmail+ " logged in", Toast.LENGTH_LONG).show();
-        Intent intent = new Intent(getBaseContext(), MainActivity.class);
+        Intent intent = new Intent(getBaseContext(), ScannerActivity.class);
         intent.putExtra("EXTRA_SESSION_ID", accountEmail);
         startActivity(intent);
 
