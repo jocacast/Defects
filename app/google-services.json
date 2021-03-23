@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "877523163137",
+    "project_id": "transportes-aldo",
+    "storage_bucket": "transportes-aldo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877523163137:android:6f8705de907062663ac800",
+        "android_client_info": {
+          "package_name": "com.example.transportistas"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "877523163137-k08b7d5lea047hp1lgpjuine10a0tt8k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.transportistas",
+            "certificate_hash": "ded2669b976304ffaa2cd9ee54adf3547b0ffe09"
+          }
+        },
+        {
+          "client_id": "877523163137-udmemhmgiqbtljjbja7krmr98t9tohnq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXlHKDi2HR6cQvBnsFa_qEKyqhz8AK6b0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "877523163137-udmemhmgiqbtljjbja7krmr98t9tohnq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
