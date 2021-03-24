@@ -16,9 +16,8 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 
 public class Login extends AppCompatActivity implements View.OnClickListener{
-    private com.google.android.gms.common.SignInButton signInButton;
     private GoogleSignInClient mGoogleSignInClient;
-    private static final int RC_SIGN_IN = 007;
+    private static final int RC_SIGN_IN = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,16 +27,15 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
                 .build();
         // Build a GoogleSignInClient with the options specified by gso.
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        signInButton = findViewById(R.id.sign_in_button);
+        com.google.android.gms.common.SignInButton signInButton = findViewById(R.id.sign_in_button);
         signInButton.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.sign_in_button:
-                signIn();
-                break;
+        int viewId = v.getId();
+        if(viewId == R.id.sign_in_button){
+            signIn();
         }
     }
 
@@ -80,7 +78,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
             Log.w("Login review", "signInResult:failed code=" + e.getStatusCode());
             //startActivity(new Intent(Login.this, Login.class));
-            //updateUI(null);
         }
     }
     public void startMainActivity(GoogleSignInAccount account) {
