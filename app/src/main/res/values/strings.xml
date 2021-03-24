@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Order Manager</string>
+    <string name="scan_button">Scan</string>
+    <string name="scan_results">Scan Results will appear here</string>
+    <string name="add_to_cart">Add to cart</string>
+    <string name="title">Order Management App</string>
 </resources>
