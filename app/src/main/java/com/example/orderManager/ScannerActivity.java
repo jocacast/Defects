@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,6 +23,8 @@ import com.google.zxing.integration.android.IntentResult;
 
 public class ScannerActivity extends AppCompatActivity implements View.OnClickListener {
     private TextView productTitle;
+    private Button addToCartButton;
+    private ProgressBar progressBar;
     @Override
     protected void onCreate(Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
@@ -29,9 +32,10 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
         setContentView(R.layout.activity_scanner);
 
         Button scanButton = findViewById(R.id.scan_button);
-        Button addToCartButton = findViewById(R.id.add_to_cart_button);
+        addToCartButton = findViewById(R.id.add_to_cart_button);
         TextView loginInfo = findViewById(R.id.log_in_info);
         productTitle = findViewById(R.id.product_title);
+        progressBar = findViewById(R.id.progress_bar);
 
         scanButton.setOnClickListener(this);
         addToCartButton.setOnClickListener(this);
@@ -67,6 +71,7 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        progressBar.setVisibility(View.VISIBLE);
         if(result != null){
             if(result.getContents()!= null){
                 Toast.makeText(ScannerActivity.this, "Result " + result.getContents(), Toast.LENGTH_SHORT).show();
@@ -75,15 +80,18 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
                 docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        progressBar.setVisibility(View.INVISIBLE);
                         if (task.isSuccessful()) {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists()) {
                                 Log.d("Firebase", "DocumentSnapshot data: " + document.getData());
                                 String productName = result.getContents() +": "+ (String)document.getData().get("name");
+                                addToCartButton.setEnabled(true);
                                 productTitle.setText(productName);
                             } else {
                                 String noProductFoundTitle = "No Product with id: " + result.getContents()+ " found";
                                 productTitle.setText(noProductFoundTitle);
+                                addToCartButton.setEnabled(false);
                             }
                         } else {
                             Log.d("Firebase", "get failed with ", task.getException());
