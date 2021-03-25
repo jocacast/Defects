@@ -13,22 +13,30 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ScannerActivity extends AppCompatActivity implements View.OnClickListener {
     private TextView productTitle;
     private Button addToCartButton;
     private ProgressBar progressBar;
+    private FirebaseFirestore db;
+    private String sessionId;
+    private String productId;
+    private String productName;
     @Override
     protected void onCreate(Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
-        String sessionId = getIntent().getStringExtra("EXTRA_SESSION_ID");
+        sessionId = getIntent().getStringExtra("EXTRA_SESSION_ID");
         setContentView(R.layout.activity_scanner);
 
         Button scanButton = findViewById(R.id.scan_button);
@@ -40,6 +48,7 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
         scanButton.setOnClickListener(this);
         addToCartButton.setOnClickListener(this);
         String loginResult = "Logged in as " + sessionId;
+        db = FirebaseFirestore.getInstance();
 
         loginInfo.setText(loginResult);
     }
@@ -65,6 +74,11 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void addToCart(){
+        Map<String, Object> data1 = new HashMap<>();
+        data1.put("quantity", "1");
+        data1.put("productName", productName);
+        db.collection("carts").document(sessionId).collection(productId).document("ProductInfo").set(data1);
+        db.collection("carts").document(sessionId).collection(productId).document("ProductInfo").set(data1);
         Toast.makeText(ScannerActivity.this, "Adding to Cart...", Toast.LENGTH_SHORT).show();
     }
 
@@ -74,51 +88,45 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
         progressBar.setVisibility(View.VISIBLE);
         if(result != null){
             if(result.getContents()!= null){
-                Toast.makeText(ScannerActivity.this, "Result " + result.getContents(), Toast.LENGTH_SHORT).show();
-                FirebaseFirestore db = FirebaseFirestore.getInstance();
-                DocumentReference docRef = db.collection("Products").document(result.getContents());
-                docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        progressBar.setVisibility(View.INVISIBLE);
-                        if (task.isSuccessful()) {
-                            DocumentSnapshot document = task.getResult();
-                            if (document.exists()) {
-                                Log.d("Firebase", "DocumentSnapshot data: " + document.getData());
-                                String productName = result.getContents() +": "+ (String)document.getData().get("name");
-                                addToCartButton.setEnabled(true);
-                                productTitle.setText(productName);
-                            } else {
-                                String noProductFoundTitle = "No Product with id: " + result.getContents()+ " found";
-                                productTitle.setText(noProductFoundTitle);
-                                addToCartButton.setEnabled(false);
-                            }
-                        } else {
-                            Log.d("Firebase", "get failed with ", task.getException());
-                        }
-                    }
-                });
+                String scannedBarCode = result.getContents();
+                setScanResults(db, scannedBarCode);
             }else{
-                Toast.makeText(ScannerActivity.this, "No results ", Toast.LENGTH_SHORT).show();
+                String noProductFoundTitle = "No results found";
+                productTitle.setText(noProductFoundTitle);
+                addToCartButton.setEnabled(false);
+                progressBar.setVisibility(View.INVISIBLE);
             }
-
         }else{
             super.onActivityResult(requestCode, resultCode, data);
         }
 
     }
 
-    private Product getProductFromFireStore(String documentId){
-        final Product[] product = new Product[1];
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference docRef = db.collection("Products").document(documentId);
-        docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+    private void setScanResults(FirebaseFirestore db,  String scannedResult){
+        DocumentReference docRef = db.collection("Products").document(scannedResult);
+        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                product[0] = documentSnapshot.toObject(Product.class);
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                progressBar.setVisibility(View.INVISIBLE);
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        Log.d("Firebase", "DocumentSnapshot data: " + document.getData());
+                        productId = (String)document.getData().get("productId");
+                        productName = (String)document.getData().get("name");
+                        addToCartButton.setEnabled(true);
+                        productTitle.setText(productName);
+                    } else {
+                        String noProductFoundTitle = "No Product with id: " + scannedResult+ " found";
+                        productTitle.setText(noProductFoundTitle);
+                        addToCartButton.setEnabled(false);
+                        progressBar.setVisibility(View.INVISIBLE);
+                    }
+                } else {
+                    Log.d("Firebase", "get failed with ", task.getException());
+                }
             }
         });
-        return product[0];
     }
 
 

@@ -82,7 +82,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener{
     }
     public void startMainActivity(GoogleSignInAccount account) {
         String accountEmail = account.getEmail();
-        Toast.makeText(getApplicationContext(),"User " + accountEmail+ " logged in", Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(),"Welcome " + account.getGivenName()+ "!!!", Toast.LENGTH_LONG).show();
         Intent intent = new Intent(getBaseContext(), ScannerActivity.class);
         intent.putExtra("EXTRA_SESSION_ID", accountEmail);
         startActivity(intent);
