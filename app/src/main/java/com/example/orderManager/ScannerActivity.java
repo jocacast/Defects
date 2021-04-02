@@ -2,37 +2,55 @@ package com.example.orderManager;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.NumberPicker;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class ScannerActivity extends AppCompatActivity implements View.OnClickListener {
     private TextView productTitle;
-    private Button addToCartButton;
+    private Button addToCartButton, searchButton;
     private ProgressBar progressBar;
+    private LinearLayout qtyLinearLayout;
     private FirebaseFirestore db;
     private String sessionId;
     private String productId;
     private String productName;
+    private NumberPicker productQty;
+    private int intProductQty;
+    private EditText searchInput;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
@@ -40,17 +58,48 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
         setContentView(R.layout.activity_scanner);
 
         Button scanButton = findViewById(R.id.scan_button);
+        searchInput = findViewById(R.id.search_edit_view);
         addToCartButton = findViewById(R.id.add_to_cart_button);
-        TextView loginInfo = findViewById(R.id.log_in_info);
         productTitle = findViewById(R.id.product_title);
         progressBar = findViewById(R.id.progress_bar);
+        qtyLinearLayout = findViewById(R.id.qty_layout);
+        searchButton = (Button)findViewById(R.id.search_button);
+
+        Toolbar myToolBar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(myToolBar);
+        productQty = findViewById(R.id.qty);
+        productQty.setMaxValue(50);
+        productQty.setMinValue(1);
 
         scanButton.setOnClickListener(this);
         addToCartButton.setOnClickListener(this);
-        String loginResult = "Logged in as " + sessionId;
+        searchButton.setOnClickListener(this);
         db = FirebaseFirestore.getInstance();
+        searchInput.addTextChangedListener(searchTextWatcher);
+    }
 
-        loginInfo.setText(loginResult);
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.shopping_cart:
+                openShoppingCartUI();
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void openShoppingCartUI() {
+        String accountEmail = sessionId;
+        Intent intent = new Intent(getBaseContext(), ShoppingCartActivity.class);
+        intent.putExtra("EXTRA_SESSION_ID", accountEmail);
+        startActivity(intent);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
     }
 
     @Override
@@ -59,10 +108,32 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
         if(viewId == R.id.scan_button){
             scanCode();
         }else if(viewId == R.id.add_to_cart_button){
-            addToCart();
+           // addToCart();
+            addToCartV2();
+        }else if(viewId == R.id.search_button){
+            searchByInput();
         }
 
     }
+
+    private TextWatcher searchTextWatcher = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            String productId = searchInput.getText().toString().trim();
+            searchButton.setEnabled(!productId.isEmpty());
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+
+        }
+    };
+
 
     private void scanCode(){
         IntentIntegrator integrator = new IntentIntegrator(this );
@@ -71,30 +142,172 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
         integrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
         integrator.setPrompt("Scanning");
         integrator.initiateScan();
+        String noProductFoundTitle = "";
+        productTitle.setText(noProductFoundTitle);
+        productTitle.setVisibility(View.VISIBLE);
+        searchInput.getText().clear();
     }
 
+    private void addToCartV2(){
+        //Validate that there is info provided on qty field
+        intProductQty = productQty.getValue();
+        //Look for the same product on the cart
+        db.collection("carts").document(sessionId).collection("Products").whereEqualTo("ProductId", productId).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                progressBar.setVisibility(View.INVISIBLE);
+                int cont = 0;
+                Map<String, Object> resultDocument = null;
+                String documentId = null;
+                if (task.isSuccessful()) {
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        cont++;
+                        resultDocument = document.getData();
+                        documentId = document.getId();
+                    }
+                    if(cont>=1){
+                        increaseQty(documentId);
+                    }else{
+                        addToFirebaseCartV2(documentId);
+                    }
+                }else{
+                    Log.d("Firebase", "get failed with ", task.getException());
+                    Toast.makeText(ScannerActivity.this, "Error while executing get. Contact IT or try again.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void increaseQty(String documentId) {
+        Toast.makeText(ScannerActivity.this, "Increasing product quantity...", Toast.LENGTH_SHORT).show();
+        DocumentReference documentReference = db.collection("carts").document(sessionId).collection("Products").document(documentId);
+        documentReference.update("Quantity", FieldValue.increment(intProductQty)).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Toast.makeText(ScannerActivity.this, "Product quantity increased", Toast.LENGTH_SHORT).show();
+                decreaseQtyAfterToast();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d("Firebase", "Error updating document", e);
+                Toast.makeText(ScannerActivity.this, "Error while updating quantity. Contact IT or try again.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
     private void addToCart(){
+        //Validate that there is info provided on qty field
+        intProductQty = productQty.getValue();
+        //Look for the same product on the cart
+        DocumentReference  documentReference = db.collection("carts").document(sessionId).collection(productId).document("ProductInfo");
+        documentReference.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                progressBar.setVisibility(View.INVISIBLE);
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    //If it is in the cart, just edit by adding whatever is on the productQty text box to the current product quantity
+                    if (document.exists()) {
+                        Toast.makeText(ScannerActivity.this, "Increasing product quantity...", Toast.LENGTH_SHORT).show();
+                        documentReference.update("quantity", FieldValue.increment(intProductQty)).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Toast.makeText(ScannerActivity.this, "Product quantity increased", Toast.LENGTH_SHORT).show();
+                                decreaseQtyAfterToast();
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.d("Firebase", "Error updating document", e);
+                                Toast.makeText(ScannerActivity.this, "Error while updating quantity. Contact IT or try again.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    } else {
+                        //If it is not in the cart, add it with the specified qty
+                        Toast.makeText(ScannerActivity.this, "Adding to Cart...", Toast.LENGTH_SHORT).show();
+                        addToFirebaseCart();
+                    }
+                } else {
+                    Log.d("Firebase", "get failed with ", task.getException());
+                    Toast.makeText(ScannerActivity.this, "Error while executing get. Contact IT or try again.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+    }
+
+    private void searchByInput(){
+        String scannedResult = searchInput.getText().toString();
+        showLoading();
+        getProductInfoAndRepaint(db, scannedResult );
+    }
+
+    private void addToFirebaseCartV2(String documentId){
+        Toast.makeText(ScannerActivity.this, "Product not found on cart, adding to Cart...", Toast.LENGTH_SHORT).show();
         Map<String, Object> data1 = new HashMap<>();
-        data1.put("quantity", "1");
+        data1.put("Quantity", intProductQty);
+        data1.put("ProductName", productName);
+        data1.put("ProductId", productId);
+        db.collection("carts").document(sessionId)
+                .collection("Products")
+                .add(data1)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Toast.makeText(ScannerActivity.this, "Product added to cart", Toast.LENGTH_SHORT).show();
+                        decreaseQtyAfterToast();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d("Firebase", "Error writing document", e);
+                Toast.makeText(ScannerActivity.this, "Error while adding to cart.  Contact IT or try again.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+    private void addToFirebaseCart(){
+        Map<String, Object> data1 = new HashMap<>();
+        data1.put("quantity", intProductQty);
         data1.put("productName", productName);
-        db.collection("carts").document(sessionId).collection(productId).document("ProductInfo").set(data1);
-        db.collection("carts").document(sessionId).collection(productId).document("ProductInfo").set(data1);
-        Toast.makeText(ScannerActivity.this, "Adding to Cart...", Toast.LENGTH_SHORT).show();
+        db.collection("carts").document(sessionId)
+                .collection(productId)
+                .document("ProductInfo")
+                .set(data1)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Toast.makeText(ScannerActivity.this, "Product added to cart", Toast.LENGTH_SHORT).show();
+                decreaseQtyAfterToast();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d("Firebase", "Error writing document", e);
+                Toast.makeText(ScannerActivity.this, "Error while adding to cart.  Contact IT or try again.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        progressBar.setVisibility(View.VISIBLE);
+        //showLoading();
         if(result != null){
             if(result.getContents()!= null){
                 String scannedBarCode = result.getContents();
-                setScanResults(db, scannedBarCode);
+                searchInput.setText(scannedBarCode);
+                //getProductInfoAndRepaint(db, scannedBarCode);
             }else{
                 String noProductFoundTitle = "No results found";
                 productTitle.setText(noProductFoundTitle);
                 addToCartButton.setEnabled(false);
                 progressBar.setVisibility(View.INVISIBLE);
+                qtyLinearLayout.setVisibility(View.INVISIBLE);
+                productTitle.setVisibility(View.VISIBLE);
             }
         }else{
             super.onActivityResult(requestCode, resultCode, data);
@@ -102,7 +315,7 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
 
     }
 
-    private void setScanResults(FirebaseFirestore db,  String scannedResult){
+    private void getProductInfoAndRepaint(FirebaseFirestore db, String scannedResult){
         DocumentReference docRef = db.collection("Products").document(scannedResult);
         docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
@@ -115,19 +328,37 @@ public class ScannerActivity extends AppCompatActivity implements View.OnClickLi
                         productId = (String)document.getData().get("productId");
                         productName = (String)document.getData().get("name");
                         addToCartButton.setEnabled(true);
+                        qtyLinearLayout.setVisibility(View.VISIBLE);
                         productTitle.setText(productName);
                     } else {
                         String noProductFoundTitle = "No Product with id: " + scannedResult+ " found";
                         productTitle.setText(noProductFoundTitle);
                         addToCartButton.setEnabled(false);
                         progressBar.setVisibility(View.INVISIBLE);
+                        qtyLinearLayout.setVisibility(View.INVISIBLE);
                     }
+                    productTitle.setVisibility(View.VISIBLE);
+
                 } else {
                     Log.d("Firebase", "get failed with ", task.getException());
+                    Toast.makeText(ScannerActivity.this, "Error while executing get. Contact IT or try again.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
+    private void decreaseQtyAfterToast(){
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                productQty.setValue(1);
+            }
+        }, 2000);
+
+    }
+    private void showLoading(){
+        progressBar.setVisibility(View.VISIBLE);
+        productTitle.setVisibility(View.INVISIBLE);
+    }
 
 }
