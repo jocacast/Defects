@@ -3,5 +3,17 @@
     <string name="scan_button">Scan</string>
     <string name="scan_results">Scan Results will appear here</string>
     <string name="add_to_cart">Add to cart</string>
+    <string name="submit_order">Submit Order</string>
     <string name="title">Order Management App</string>
+    <string name="quantity_tag">Quantity</string>
+    <string name="scanner_results">No results found</string>
+    <string name="quantity">Quantity</string>
+    <string name="enter_number">Enter Number </string>
+    <string name="scan__or_search_info"> Enter number or scan code bar</string>
+    <string name="search_button">Search</string>
+    <string name="shopping_cart_instructions">Keep select an item to update or delete</string>>
+    <string-array name="type_of_units">
+        <item>Unit(s)</item>
+        <item>Box(es)</item>
+    </string-array>
 </resources>

@@ -6,36 +6,80 @@
     android:layout_height="match_parent"
     tools:context=".ScannerActivity">
 
-    <TextView
-        android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/title"
-        app:layout_constraintBottom_toTopOf="@+id/log_in_info"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:layout_constraintTop_toTopOf="parent"
-        android:textSize="32sp"/>
+    />
 
-    <TextView
-        android:id="@+id/log_in_info"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/scan_button"
+        android:orientation="vertical"
+        android:id = "@+id/scan_layout"
+        app:layout_constraintBottom_toTopOf="@+id/search_button"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/title"
-        android:textSize="18sp"/>
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"
+        android:weightSum="60"
+        >
+
+        <TextView
+            android:id="@+id/enter_or_scan_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:layout_weight="80"
+            android:layout_gravity="center"
+            android:text="@string/scan__or_search_info"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id = "@+id/search_layout"
+            app:layout_constraintTop_toBottomOf="@+id/product_title"
+            app:layout_constraintBottom_toTopOf="@+id/add_to_cart_button"
+            android:weightSum="100"
+            >
+
+            <EditText
+                android:id="@+id/search_edit_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:hint="@string/enter_number"
+                android:inputType="number"
+                android:layout_weight="80"
+                app:endIconMode="clear_text"
+                />
+            <Button
+                android:id="@+id/scan_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/scan_button"
+                android:layout_weight="20"
+                />
+        </LinearLayout>
+    </LinearLayout>
 
     <Button
-        android:id="@+id/scan_button"
-        android:layout_width="wrap_content"
+        android:id="@+id/search_button"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/scan_button"
+        android:text="@string/search_button"
         app:layout_constraintBottom_toTopOf="@+id/product_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/scan_layout"
+        android:enabled="false"
+        />
 
     <TextView
         android:id="@+id/product_title"
@@ -43,10 +87,56 @@
         android:textAlignment="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/scan_button"
-        app:layout_constraintBottom_toTopOf="@+id/add_to_cart_button"
-        android:textSize="30sp"/>
+        app:layout_constraintTop_toBottomOf="@+id/search_button"
+        app:layout_constraintBottom_toTopOf="@+id/qty_layout"
+        android:textSize="30sp" />
 
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/search_button"
+        app:layout_constraintBottom_toTopOf="@+id/qty_layout"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id = "@+id/qty_layout"
+        app:layout_constraintTop_toBottomOf="@+id/product_title"
+        app:layout_constraintBottom_toTopOf="@+id/add_to_cart_button"
+        android:visibility="invisible"
+        android:weightSum="60"
+        >
+        <TextView
+            android:id="@+id/text_qty"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="15sp"
+            android:hint="@string/quantity_tag"
+            android:text="@string/quantity"
+            android:layout_weight="20"
+            android:layout_gravity="center"
+            android:textAlignment="center"
+            />
+
+        <NumberPicker
+            android:id="@+id/qty"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:textSize="15sp"
+            android:hint="@string/quantity_tag"
+            android:inputType="number"
+            android:layout_weight="40"
+            android:layout_gravity="center"
+            android:textAlignment="center"
+            />
+
+
+    </LinearLayout>
 
 
     <Button
@@ -57,7 +147,10 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/product_title" />
+        app:layout_constraintTop_toBottomOf="@+id/qty_layout"
+        android:enabled="false"/>
+
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

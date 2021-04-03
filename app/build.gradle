@@ -55,4 +55,6 @@ dependencies {
     //Scanner
     implementation 'com.journeyapps:zxing-android-embedded:4.0.2'
 
+    implementation 'com.firebaseui:firebase-ui-firestore:7.1.1'
+
 }
