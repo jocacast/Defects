@@ -1,15 +1,25 @@
 package com.example.orderManager;
 
-public class CartModel {
+public class ShoppingCartItem {
+    private String productId;
     private String productName;
     private long quantity;
 
-    public CartModel(String productName, long quantity) {
+    public ShoppingCartItem() {
+    }
+
+    public ShoppingCartItem(String productId, String productName, long quantity) {
+        this.productId = productId;
         this.productName = productName;
         this.quantity = quantity;
     }
 
-    public CartModel() {
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 
     public String getProductName() {
